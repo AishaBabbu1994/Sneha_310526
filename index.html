@@ -283,9 +283,10 @@
         </div>
         <div class="model-field">
             <select id="modelSelect" class="glass-input">
-                <option value="groq/compound">🌙 Mixtral 8x7B (recomendado)</option>
-                <option value="llama-3.3-70b-versatile">🦙 Llama 3 70B</option>
-                <option value="llama3-8b-8192">📖 Llama 3 8B</option>
+                <option value="llama-3.3-70b-versatile" selected>🦙 Llama 3.3 70B (Versatile) ★</option>
+                <option value="groq/compound">⚛️ Groq/Compound (experimental)</option>
+                <option value="llama3-70b-8192">🌕 Llama 3 70B</option>
+                <option value="mixtral-8x7b-32768">🌙 Mixtral 8x7B</option>
                 <option value="gemma2-9b-it">💎 Gemma 2 9B</option>
             </select>
         </div>
@@ -373,14 +374,13 @@
         if (loadingElem && loadingElem.remove) loadingElem.remove();
     }
 
-    // Limpiar historial visual (solo mensajes, conserva el saludo base opcional)
+    // Limpiar historial visual (conserva el saludo inicial)
     function clearChatHistory() {
         const preserveGreeting = chatWindow.children.length > 0 && chatWindow.children[0]?.innerText.includes('Namaste');
         if (!preserveGreeting) {
             chatWindow.innerHTML = '';
             addMessage('sneha', 'Namaste, viajero. Soy tu guía analítica y mística. Sube un archivo (.txt o .pdf) o pregúntame desde tu intuición. El conocimiento aguarda.');
         } else {
-            // remover todos excepto el primero
             while (chatWindow.children.length > 1) {
                 chatWindow.removeChild(chatWindow.lastChild);
             }
@@ -391,22 +391,18 @@
     function extraerFragmentoInteligente(query, textoCompleto, maxLength = 1500) {
         if (!textoCompleto || textoCompleto.length === 0) return "";
         
-        // Limpieza: normalizar query
         const queryLower = query.toLowerCase();
         const palabrasClave = queryLower.split(/\s+/).filter(p => p.length > 3);
         if (palabrasClave.length === 0) {
-            // si query muy corta: devolver inicio del doc
             return textoCompleto.substring(0, maxLength);
         }
 
-        // Dividir en segmentos (párrafos por doble salto o puntos seguido de mayúscula)
         let segments = textoCompleto.split(/\n\s*\n/);
         if (segments.length < 2) {
             segments = textoCompleto.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚ])/);
         }
         if (segments.length < 2) segments = [textoCompleto];
         
-        // Calcular score para cada segmento
         const scored = segments.map(seg => {
             const segLower = seg.toLowerCase();
             let score = 0;
@@ -414,7 +410,6 @@
                 const ocurrencias = (segLower.match(new RegExp(kw, 'gi')) || []).length;
                 score += ocurrencias * (kw.length * 0.8);
             }
-            // bonus si cerca del inicio del doc?
             return { segment: seg.trim(), score };
         });
         
@@ -424,12 +419,10 @@
         if (bestSegments.length > 0) {
             fragmento = bestSegments.map(s => s.segment).join(".\n");
         } else {
-            // sin match: primer párrafo no vacío
             const nonEmpty = segments.find(s => s.trim().length > 50);
             fragmento = nonEmpty ? nonEmpty : textoCompleto.substring(0, maxLength);
         }
         
-        // limpiar saltos excesivos y truncar
         fragmento = fragmento.replace(/\s+/g, ' ').trim();
         if (fragmento.length > maxLength) {
             fragmento = fragmento.substring(0, maxLength);
@@ -455,7 +448,6 @@
                     const content = await page.getTextContent();
                     const pageText = content.items.map(item => item.str).join(' ');
                     fullText.push(pageText);
-                    // actualizar estado cada varias páginas
                     if (i % 5 === 0) {
                         docStatusDiv.innerHTML = `📄 Procesando página ${i}/${pdf.numPages}...`;
                     }
@@ -467,14 +459,12 @@
             
             if (!textoExtraido || textoExtraido.trim().length === 0) throw new Error("El documento no contiene texto legible.");
             
-            // Limitar a 35000 caracteres para rendimiento y evitar costos excesivos
             let textoLimitado = textoExtraido.length > 38000 ? textoExtraido.substring(0, 38000) + "\n[Contenido truncado para rendimiento]" : textoExtraido;
             documentoCompleto = textoLimitado;
             nombreDocumento = file.name;
             const sizeMsg = `✅ Documento "${nombreDocumento}" cargado (${documentoCompleto.length} caracteres). Memoria disponible.`;
             docStatusDiv.innerHTML = `📖 Activo: ${nombreDocumento} (${documentoCompleto.length} chars)`;
             addMessage('system', sizeMsg, false, true);
-            // remover mensaje de carga inicial
             if (chatMsg) chatMsg.remove();
             addMessage('sneha', `He absorbido "${nombreDocumento}". Pregúntame sobre su esencia.`, false);
         } catch (err) {
@@ -489,7 +479,6 @@
     async function sendToGroq(question, apiKey, modelName) {
         if (!apiKey || apiKey.trim() === '') throw new Error("API Key de Groq no proporcionada");
         
-        // Extraer fragmento relevante del documento si existe
         let contextoFragmento = "";
         if (documentoCompleto && documentoCompleto.length > 20) {
             contextoFragmento = extraerFragmentoInteligente(question, documentoCompleto, 1400);
@@ -502,7 +491,6 @@
             contextoFragmento = "\n(No hay documento cargado. Responde desde tu conocimiento místico-analítico.)\n";
         }
         
-        // Construcción con system + user para mejor adherencia
         const systemPrompt = `Eres Sneha_310526, una guía mística, analítica y serena. Tu propósito es iluminar respuestas basadas en el conocimiento del documento proporcionado (si existe) y tu sabiduría intrínseca. NO copies textualmente largos fragmentos, sintetiza, sé profunda pero concisa. Si la pregunta no tiene relación con el documento, puedes responder con perspectiva espiritual, pero siempre aclara que viene de tu esencia. Idioma: español, tono cálido y enigmático.`;
         
         const userContent = `Pregunta del buscador: ${question}\n${contextoFragmento}\n\nPor favor, responde como Sneha_310526, usando el fragmento si es útil. Si no hay información suficiente, dímelo con honestidad mística.`;
@@ -560,7 +548,6 @@
             return;
         }
         
-        // Mostrar pregunta del usuario
         addMessage('user', question);
         userInput.value = '';
         userInput.focus();
@@ -580,7 +567,7 @@
             removeLoadingMessage(loadingElem);
             let mensajeError = err.message;
             if (mensajeError.includes('API key')) mensajeError = '❌ API Key inválida o no autorizada. Verifica tu clave de Groq.';
-            else if (mensajeError.includes('model')) mensajeError = '⚠️ Modelo no soportado por Groq. Elige uno válido (Mixtral, Llama, Gemma).';
+            else if (mensajeError.includes('model')) mensajeError = '⚠️ Modelo no soportado por Groq. Elige uno válido (Llama 3.3, Compound, Mixtral, etc).';
             addMessage('system', `Error: ${mensajeError}`, true, true);
             console.error(err);
         } finally {
@@ -608,23 +595,20 @@
             const file = e.target.files[0];
             if (!file) return;
             await cargarDocumento(file);
-            fileInput.value = ''; // permite recargar el mismo archivo después
+            fileInput.value = '';
         });
     }
     
-    // Precarga de estado sugerido y ejemplo rápido
     function showInitialGuidance() {
         if (!documentoCompleto) {
             docStatusDiv.innerHTML = `🌀 Sin memoria activa · sube .txt / .pdf`;
         }
     }
     
-    // Bootstrap
     (function bootstrap() {
         initEventListeners();
         showInitialGuidance();
-        // agregar tooltip para modelo
-        console.log("Sneha_310526 · Mística analítica lista");
+        console.log("Sneha_310526 · Modelos disponibles: llama-3.3-70b-versatile, groq/compound y más");
     })();
 </script>
 </body>
