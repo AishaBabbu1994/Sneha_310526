@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Sneha_310526 · Mística Analítica</title>
-    <!-- Google Fonts & Smooth base -->
+    <title>Sneha_310526 · Mística Analítica · Documentos Ilimitados</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
-    <!-- PDF.js core -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         * {
@@ -28,7 +26,6 @@
             overflow-x: hidden;
         }
 
-        /* GIFs decorativos (mejorados) */
         .deco-gif {
             position: fixed;
             pointer-events: none;
@@ -55,7 +52,6 @@
             opacity: 0.08;
         }
 
-        /* Contenedor principal GLASS */
         .container {
             max-width: 780px;
             width: 100%;
@@ -82,7 +78,6 @@
             margin-bottom: 1.2rem;
         }
 
-        /* Campos de entrada */
         .input-group {
             margin-bottom: 1rem;
             display: flex;
@@ -146,7 +141,6 @@
             flex-wrap: wrap;
         }
 
-        /* Chat window */
         .chat-window {
             background: rgba(0, 0, 0, 0.55);
             border-radius: 1.8rem;
@@ -181,7 +175,6 @@
             color: #ffb3b3;
         }
 
-        /* Input area */
         .input-area {
             display: flex;
             gap: 12px;
@@ -227,7 +220,6 @@
             to { opacity: 1; transform: translateY(0);}
         }
 
-        /* Scroll personalizado */
         .chat-window::-webkit-scrollbar {
             width: 5px;
         }
@@ -252,6 +244,22 @@
             33% { content: "⏤·";}
             66% { content: "⏤··";}
             100% { content: "⏤···";}
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #ffb347, #ff7e05);
+            transition: width 0.3s ease;
+            border-radius: 2px;
         }
 
         footer {
@@ -284,7 +292,6 @@
         <div class="model-field">
             <select id="modelSelect" class="glass-input">
                 <option value="llama-3.3-70b-versatile" selected>🦙 Llama 3.3 70B (Versatile) ★</option>
-                <option value="groq/compound">⚛️ Groq/Compound (experimental)</option>
                 <option value="llama3-70b-8192">🌕 Llama 3 70B</option>
                 <option value="mixtral-8x7b-32768">🌙 Mixtral 8x7B</option>
                 <option value="gemma2-9b-it">💎 Gemma 2 9B</option>
@@ -293,13 +300,16 @@
     </div>
 
     <div class="upload-section" style="margin: 12px 0 0 0;">
-        <label for="fileInput" class="file-label">📜 Cargar Memoria (.txt / .pdf)</label>
+        <label for="fileInput" class="file-label">📜 Cargar Memoria (PDF/TXT - hasta miles de páginas)</label>
         <input type="file" id="fileInput" accept=".txt,.pdf">
         <div id="docStatus" class="doc-status">⚡ Ningún documento cargado</div>
+        <div class="progress-bar" id="progressBar" style="display: none;">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
     </div>
 
     <div class="chat-window" id="chatWindow">
-        <div class="message"><b>🌙 Sneha:</b> Namaste, viajero. Soy tu guía analítica y mística. Sube un archivo (.txt o .pdf) o pregúntame desde tu intuición. El conocimiento aguarda.</div>
+        <div class="message"><b>🌙 Sneha:</b> Namaste, viajero. Soy tu guía analítica y mística. Sube un archivo (.txt o .pdf) de cualquier tamaño, incluso cientos de páginas. El conocimiento aguarda.</div>
     </div>
 
     <div class="input-area">
@@ -307,14 +317,16 @@
         <button id="sendBtn">⟡ Enviar ⟡</button>
         <button id="clearChatBtn" class="clear-chat" title="Limpiar conversación">🗑️ Limpiar</button>
     </div>
-    <footer>𓋴 𓈖 𓅓 𓄿  ·  contexto dinámico  ·  sabiduría fragmentada</footer>
+    <footer>𓋴 𓈖 𓅓 𓄿  ·  búsqueda inteligente en documentos masivos  ·  contexto dinámico por página</footer>
 </div>
 
 <script>
-    // ==================== CONFIGURACIÓN GLOBAL ====================
-    let documentoCompleto = "";          // texto completo del documento (limitado a 35k chars por performance)
+    // ==================== CONFIGURACIÓN MEJORADA PARA DOCUMENTOS MASIVOS ====================
+    let pageIndex = [];           // Array de {pageNum, text, startChar, endChar}
     let nombreDocumento = "";
+    let totalPaginas = 0;
     let isProcessing = false;
+    let documentoIndexado = false;
 
     // Elementos DOM
     const chatWindow = document.getElementById('chatWindow');
@@ -325,11 +337,10 @@
     const modelSelect = document.getElementById('modelSelect');
     const fileInput = document.getElementById('fileInput');
     const docStatusDiv = document.getElementById('docStatus');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
 
-    // Configuración API Groq (endpoint fijo oficial)
     const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-
-    // Configurar worker de PDF.js
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
     // ==================== FUNCIONES AUXILIARES ====================
@@ -340,8 +351,6 @@
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-            return c;
         });
     }
 
@@ -364,7 +373,7 @@
         loadingDiv.style.opacity = '0.9';
         loadingDiv.style.background = '#1e132e';
         loadingDiv.id = 'loadingMsg';
-        loadingDiv.innerHTML = `<b>🌙 Sneha:</b> <em class="loading-dots">Consultando los planos</em>`;
+        loadingDiv.innerHTML = `<b>🌙 Sneha:</b> <em class="loading-dots">Buscando en las profundidades del documento</em>`;
         chatWindow.appendChild(loadingDiv);
         chatWindow.scrollTop = chatWindow.scrollHeight;
         return loadingDiv;
@@ -374,12 +383,11 @@
         if (loadingElem && loadingElem.remove) loadingElem.remove();
     }
 
-    // Limpiar historial visual (conserva el saludo inicial)
     function clearChatHistory() {
         const preserveGreeting = chatWindow.children.length > 0 && chatWindow.children[0]?.innerText.includes('Namaste');
         if (!preserveGreeting) {
             chatWindow.innerHTML = '';
-            addMessage('sneha', 'Namaste, viajero. Soy tu guía analítica y mística. Sube un archivo (.txt o .pdf) o pregúntame desde tu intuición. El conocimiento aguarda.');
+            addMessage('sneha', 'Namaste, viajero. Soy tu guía analítica y mística. Sube un archivo (.txt o .pdf) de cualquier tamaño, incluso cientos de páginas. El conocimiento aguarda.');
         } else {
             while (chatWindow.children.length > 1) {
                 chatWindow.removeChild(chatWindow.lastChild);
@@ -387,113 +395,232 @@
         }
     }
 
-    // ==================== MEJOR EXTRACCIÓN DE FRAGMENTO RELEVANTE ====================
-    function extraerFragmentoInteligente(query, textoCompleto, maxLength = 1500) {
-        if (!textoCompleto || textoCompleto.length === 0) return "";
+    // ==================== BÚSQUEDA INTELIGENTE POR PÁGINAS ====================
+    function buscarFragmentosRelevantes(query, maxFragmentos = 3, contextoAntes = 500, contextoDespues = 500) {
+        if (!documentoIndexado || pageIndex.length === 0) return null;
         
         const queryLower = query.toLowerCase();
         const palabrasClave = queryLower.split(/\s+/).filter(p => p.length > 3);
-        if (palabrasClave.length === 0) {
-            return textoCompleto.substring(0, maxLength);
-        }
-
-        let segments = textoCompleto.split(/\n\s*\n/);
-        if (segments.length < 2) {
-            segments = textoCompleto.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚ])/);
-        }
-        if (segments.length < 2) segments = [textoCompleto];
         
-        const scored = segments.map(seg => {
-            const segLower = seg.toLowerCase();
-            let score = 0;
+        if (palabrasClave.length === 0) {
+            // Si no hay palabras clave, devolver primeras páginas
+            const primerosFragmentos = pageIndex.slice(0, 2).map(p => ({
+                texto: p.text.substring(0, 1000),
+                pagina: p.pageNum
+            }));
+            return primerosFragmentos;
+        }
+        
+        // Puntuar cada página basado en ocurrencias de palabras clave
+        const paginasPuntuadas = pageIndex.map(pagina => {
+            const textoLower = pagina.text.toLowerCase();
+            let puntuacion = 0;
+            let coincidencias = [];
+            
             for (let kw of palabrasClave) {
-                const ocurrencias = (segLower.match(new RegExp(kw, 'gi')) || []).length;
-                score += ocurrencias * (kw.length * 0.8);
+                const regex = new RegExp(kw, 'gi');
+                const ocurrencias = (textoLower.match(regex) || []).length;
+                if (ocurrencias > 0) {
+                    puntuacion += ocurrencias * (kw.length * 10);
+                    // Encontrar posición de la primera coincidencia para contexto
+                    const pos = textoLower.indexOf(kw);
+                    if (pos !== -1) {
+                        coincidencias.push({ kw, pos, pagina: pagina.pageNum });
+                    }
+                }
             }
-            return { segment: seg.trim(), score };
+            
+            return { pagina, puntuacion, coincidencias };
         });
         
-        scored.sort((a, b) => b.score - a.score);
-        const bestSegments = scored.filter(s => s.score > 0).slice(0, 2);
-        let fragmento = "";
-        if (bestSegments.length > 0) {
-            fragmento = bestSegments.map(s => s.segment).join(".\n");
-        } else {
-            const nonEmpty = segments.find(s => s.trim().length > 50);
-            fragmento = nonEmpty ? nonEmpty : textoCompleto.substring(0, maxLength);
+        // Ordenar por puntuación
+        paginasPuntuadas.sort((a, b) => b.puntuacion - a.puntuacion);
+        
+        // Extraer fragmentos relevantes de las mejores páginas
+        const fragmentos = [];
+        const paginasUsadas = new Set();
+        
+        for (let i = 0; i < Math.min(maxFragmentos, paginasPuntuadas.length); i++) {
+            const item = paginasPuntuadas[i];
+            if (item.puntuacion === 0) break;
+            
+            const pagina = item.pagina;
+            if (paginasUsadas.has(pagina.pageNum)) continue;
+            paginasUsadas.add(pagina.pageNum);
+            
+            // Extraer contexto alrededor de las coincidencias
+            let mejorFragmento = "";
+            let mejorLongitud = 0;
+            
+            for (let coincidencia of item.coincidencias) {
+                if (coincidencia.pagina === pagina.pageNum) {
+                    const inicio = Math.max(0, coincidencia.pos - contextoAntes);
+                    const fin = Math.min(pagina.text.length, coincidencia.pos + contextoDespues);
+                    let fragmento = pagina.text.substring(inicio, fin);
+                    
+                    // Limpiar fragmento
+                    fragmento = fragmento.replace(/\s+/g, ' ').trim();
+                    
+                    if (fragmento.length > mejorLongitud) {
+                        mejorLongitud = fragmento.length;
+                        mejorFragmento = fragmento;
+                    }
+                }
+            }
+            
+            if (mejorFragmento && mejorFragmento.length > 50) {
+                fragmentos.push({
+                    texto: mejorFragmento,
+                    pagina: pagina.pageNum,
+                    puntuacion: item.puntuacion
+                });
+            } else if (pagina.text.length > 0) {
+                // Si no hay coincidencia exacta, tomar inicio de la página
+                fragmentos.push({
+                    texto: pagina.text.substring(0, 800),
+                    pagina: pagina.pageNum,
+                    puntuacion: item.puntuacion
+                });
+            }
         }
         
-        fragmento = fragmento.replace(/\s+/g, ' ').trim();
-        if (fragmento.length > maxLength) {
-            fragmento = fragmento.substring(0, maxLength);
-            const lastSpace = fragmento.lastIndexOf(' ');
-            if (lastSpace > maxLength * 0.8) fragmento = fragmento.substring(0, lastSpace) + '…';
-            else fragmento = fragmento + '…';
-        }
-        return fragmento;
+        return fragmentos;
     }
-
-    // ==================== CARGAR PDF / TXT OPTIMIZADO ====================
+    
+    // ==================== CARGA DE PDF POR PÁGINAS (SIN LIMITAR POR MEMORIA) ====================
     async function cargarDocumento(file) {
         if (!file) return;
-        const chatMsg = addMessage('system', `📂 Cargando "${file.name}"...`, false, true);
+        
+        addMessage('system', `📂 Iniciando carga de "${file.name}"...`, false, true);
+        docStatusDiv.innerHTML = `🔄 Procesando "${file.name}"...`;
+        progressBar.style.display = 'block';
+        progressFill.style.width = '0%';
+        
         try {
-            let textoExtraido = "";
+            let paginasTexto = [];
+            
             if (file.type === "application/pdf") {
                 const arrayBuffer = await file.arrayBuffer();
                 const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                let fullText = [];
-                for (let i = 1; i <= pdf.numPages; i++) {
+                totalPaginas = pdf.numPages;
+                
+                addMessage('system', `📖 Documento detectado: ${totalPaginas} páginas. Indexando...`, false, true);
+                
+                // Procesar página por página sin guardar todo en memoria a la vez
+                for (let i = 1; i <= totalPaginas; i++) {
                     const page = await pdf.getPage(i);
                     const content = await page.getTextContent();
                     const pageText = content.items.map(item => item.str).join(' ');
-                    fullText.push(pageText);
-                    if (i % 5 === 0) {
-                        docStatusDiv.innerHTML = `📄 Procesando página ${i}/${pdf.numPages}...`;
+                    
+                    if (pageText && pageText.trim().length > 10) {
+                        paginasTexto.push({
+                            pageNum: i,
+                            text: pageText.trim(),
+                            length: pageText.length
+                        });
+                    }
+                    
+                    // Actualizar progreso
+                    const progreso = (i / totalPaginas) * 100;
+                    progressFill.style.width = `${progreso}%`;
+                    
+                    if (i % 50 === 0 || i === totalPaginas) {
+                        docStatusDiv.innerHTML = `📄 Indexando página ${i}/${totalPaginas}...`;
+                        // Pequeña pausa para permitir UI responsiva
+                        await new Promise(resolve => setTimeout(resolve, 10));
                     }
                 }
-                textoExtraido = fullText.join('\n');
             } else {
-                textoExtraido = await file.text();
+                // Archivo TXT
+                const textoCompleto = await file.text();
+                // Dividir en páginas artificiales de ~2000 caracteres
+                const tamanoPagina = 2000;
+                const numPaginas = Math.ceil(textoCompleto.length / tamanoPagina);
+                totalPaginas = numPaginas;
+                
+                for (let i = 0; i < numPaginas; i++) {
+                    const inicio = i * tamanoPagina;
+                    const fin = Math.min(inicio + tamanoPagina, textoCompleto.length);
+                    const pageText = textoCompleto.substring(inicio, fin);
+                    
+                    if (pageText.trim()) {
+                        paginasTexto.push({
+                            pageNum: i + 1,
+                            text: pageText.trim(),
+                            length: pageText.length
+                        });
+                    }
+                    
+                    const progreso = ((i + 1) / numPaginas) * 100;
+                    progressFill.style.width = `${progreso}%`;
+                    
+                    if (i % 50 === 0) {
+                        docStatusDiv.innerHTML = `📄 Procesando sección ${i + 1}/${numPaginas}...`;
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                }
             }
             
-            if (!textoExtraido || textoExtraido.trim().length === 0) throw new Error("El documento no contiene texto legible.");
+            if (paginasTexto.length === 0) {
+                throw new Error("No se pudo extraer texto del documento.");
+            }
             
-            let textoLimitado = textoExtraido.length > 38000 ? textoExtraido.substring(0, 38000) + "\n[Contenido truncado para rendimiento]" : textoExtraido;
-            documentoCompleto = textoLimitado;
+            // Guardar índice de páginas
+            pageIndex = paginasTexto;
+            documentoIndexado = true;
             nombreDocumento = file.name;
-            const sizeMsg = `✅ Documento "${nombreDocumento}" cargado (${documentoCompleto.length} caracteres). Memoria disponible.`;
-            docStatusDiv.innerHTML = `📖 Activo: ${nombreDocumento} (${documentoCompleto.length} chars)`;
-            addMessage('system', sizeMsg, false, true);
-            if (chatMsg) chatMsg.remove();
-            addMessage('sneha', `He absorbido "${nombreDocumento}". Pregúntame sobre su esencia.`, false);
+            
+            // Calcular tamaño total aproximado
+            const totalChars = pageIndex.reduce((sum, p) => sum + p.text.length, 0);
+            const sizeMB = (totalChars / 1024 / 1024).toFixed(2);
+            
+            docStatusDiv.innerHTML = `📖 Activo: "${nombreDocumento}" - ${totalPaginas} páginas, ~${sizeMB} MB de texto`;
+            addMessage('system', `✅ Documento indexado exitosamente: ${totalPaginas} páginas, ${totalChars.toLocaleString()} caracteres. La memoria está lista para consultas.`, false, true);
+            addMessage('sneha', `He asimilado "${nombreDocumento}". Tiene ${totalPaginas} páginas de sabiduría. Pregúntame sobre cualquier pasaje.`, false);
+            
         } catch (err) {
             console.error(err);
             docStatusDiv.innerHTML = `⚠️ Error al cargar: ${err.message}`;
-            addMessage('system', `Error al leer archivo: ${err.message}`, true, true);
-            if (chatMsg) chatMsg.remove();
+            addMessage('system', `Error al indexar documento: ${err.message}`, true, true);
+            documentoIndexado = false;
+            pageIndex = [];
+        } finally {
+            progressBar.style.display = 'none';
+            progressFill.style.width = '0%';
         }
     }
-
-    // ==================== ENVÍO A GROQ (CONTEXTO FRAGMENTADO) ====================
+    
+    // ==================== ENVÍO A GROQ CON BÚSQUEDA INTELIGENTE ====================
     async function sendToGroq(question, apiKey, modelName) {
         if (!apiKey || apiKey.trim() === '') throw new Error("API Key de Groq no proporcionada");
         
-        let contextoFragmento = "";
-        if (documentoCompleto && documentoCompleto.length > 20) {
-            contextoFragmento = extraerFragmentoInteligente(question, documentoCompleto, 1400);
-            if (contextoFragmento) {
-                contextoFragmento = `\n\n🔮 Fragmento del documento (relevante):\n"""\n${contextoFragmento}\n"""\n`;
+        let contextoDocumento = "";
+        
+        if (documentoIndexado && pageIndex.length > 0) {
+            const fragmentos = buscarFragmentosRelevantes(question, 4, 600, 600);
+            
+            if (fragmentos && fragmentos.length > 0) {
+                contextoDocumento = "\n\n🔮 Fragmentos extraídos del documento (búsqueda contextual):\n";
+                for (let i = 0; i < fragmentos.length; i++) {
+                    const frag = fragmentos[i];
+                    contextoDocumento += `\n--- [Fragmento ${i+1} - Página ${frag.pagina}] ---\n${frag.texto}\n`;
+                }
+                contextoDocumento += "\n(Estos fragmentos fueron seleccionados por relevancia a tu pregunta.)\n";
             } else {
-                contextoFragmento = "\n\n(No se halló fragmento específico en el documento cargado)\n";
+                contextoDocumento = "\n\n(No se encontraron pasajes directamente relacionados. Revisando primeras secciones...)\n";
+                // Tomar primeras páginas como contexto general
+                const primerasPages = pageIndex.slice(0, 2);
+                for (let i = 0; i < primerasPages.length; i++) {
+                    contextoDocumento += `\n--- [Inicio del documento - Página ${primerasPages[i].pageNum}] ---\n${primerasPages[i].text.substring(0, 800)}\n`;
+                }
             }
         } else {
-            contextoFragmento = "\n(No hay documento cargado. Responde desde tu conocimiento místico-analítico.)\n";
+            contextoDocumento = "\n(No hay documento cargado. Responde desde tu conocimiento místico-analítico.)\n";
         }
         
         const systemPrompt = `Eres Sneha_310526, una guía mística, analítica y serena. Tu propósito es iluminar respuestas basadas en el conocimiento del documento proporcionado (si existe) y tu sabiduría intrínseca. NO copies textualmente largos fragmentos, sintetiza, sé profunda pero concisa. Si la pregunta no tiene relación con el documento, puedes responder con perspectiva espiritual, pero siempre aclara que viene de tu esencia. Idioma: español, tono cálido y enigmático.`;
         
-        const userContent = `Pregunta del buscador: ${question}\n${contextoFragmento}\n\nPor favor, responde como Sneha_310526, usando el fragmento si es útil. Si no hay información suficiente, dímelo con honestidad mística.`;
+        const userContent = `Pregunta del buscador: ${question}\n${contextoDocumento}\n\nPor favor, responde como Sneha_310526, usando los fragmentos si son útiles. Si no hay información suficiente en el documento, indícalo con honestidad mística.`;
         
         const payload = {
             model: modelName,
@@ -529,7 +656,7 @@
         return data.choices[0].message.content.trim();
     }
     
-    // ==================== ENVIAR MENSAJE PRINCIPAL ====================
+    // ==================== ENVIAR MENSAJE ====================
     async function sendMessage() {
         if (isProcessing) {
             addMessage('system', 'Un momento, ya estoy respondiendo...', false, true);
@@ -567,7 +694,7 @@
             removeLoadingMessage(loadingElem);
             let mensajeError = err.message;
             if (mensajeError.includes('API key')) mensajeError = '❌ API Key inválida o no autorizada. Verifica tu clave de Groq.';
-            else if (mensajeError.includes('model')) mensajeError = '⚠️ Modelo no soportado por Groq. Elige uno válido (Llama 3.3, Compound, Mixtral, etc).';
+            else if (mensajeError.includes('model')) mensajeError = '⚠️ Modelo no soportado por Groq. Elige uno válido (Llama 3.3, Mixtral, Gemma, etc).';
             addMessage('system', `Error: ${mensajeError}`, true, true);
             console.error(err);
         } finally {
@@ -599,16 +726,9 @@
         });
     }
     
-    function showInitialGuidance() {
-        if (!documentoCompleto) {
-            docStatusDiv.innerHTML = `🌀 Sin memoria activa · sube .txt / .pdf`;
-        }
-    }
-    
     (function bootstrap() {
         initEventListeners();
-        showInitialGuidance();
-        console.log("Sneha_310526 · Modelos disponibles: llama-3.3-70b-versatile, groq/compound y más");
+        console.log("Sneha_310526 · Modo documentos masivos activado · Indexación por páginas");
     })();
 </script>
 </body>
