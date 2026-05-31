@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Sneha_310526 · Mística Analítica</title>
+    <!-- Google Fonts & Smooth base -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <!-- PDF.js core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at 10% 30%, #0f0719, #03010a);
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            color: #f3e6c2;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* GIFs decorativos (mejorados) */
+        .deco-gif {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.35;
+            filter: drop-shadow(0 0 6px #ffb347);
+            transition: opacity 0.5s ease;
+        }
+        .gif-left {
+            bottom: 0;
+            left: 0;
+            width: 220px;
+        }
+        .gif-right {
+            bottom: 0;
+            right: 0;
+            width: 220px;
+        }
+        .gif-bg {
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            opacity: 0.08;
+        }
+
+        /* Contenedor principal GLASS */
+        .container {
+            max-width: 780px;
+            width: 100%;
+            background: rgba(10, 5, 20, 0.65);
+            backdrop-filter: blur(12px);
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 215, 0, 0.35);
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 215, 0, 0.1) inset;
+            padding: 1.5rem 1.8rem;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .neon-title {
+            font-size: 2.3rem;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffb347, #ff7e05);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 12px rgba(255, 100, 0, 0.5);
+            margin-bottom: 1.2rem;
+        }
+
+        /* Campos de entrada */
+        .input-group {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        .api-field {
+            flex: 2;
+            min-width: 180px;
+        }
+        .model-field {
+            flex: 1.5;
+            min-width: 150px;
+        }
+        .glass-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            border: 1px solid #ffd966;
+            border-radius: 60px;
+            padding: 12px 18px;
+            color: #ffeaac;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: 0.2s;
+            outline: none;
+        }
+        .glass-input:focus {
+            border-color: #ffa500;
+            box-shadow: 0 0 10px rgba(255, 165, 0, 0.4);
+            background: #0a0418;
+        }
+        .file-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #2a1a3a;
+            padding: 10px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: 1px solid #ffb347;
+            transition: 0.2s;
+            backdrop-filter: blur(4px);
+        }
+        .file-label:hover {
+            background: #4a2a5e;
+            border-color: #ffcc77;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .doc-status {
+            font-size: 0.75rem;
+            margin-top: 6px;
+            color: #cfb87c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Chat window */
+        .chat-window {
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 1.8rem;
+            border: 1px solid rgba(255, 200, 100, 0.5);
+            height: 400px;
+            overflow-y: auto;
+            padding: 1rem;
+            margin: 1.3rem 0;
+            scroll-behavior: smooth;
+        }
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.6rem 1rem;
+            border-radius: 1.5rem;
+            background: rgba(25, 15, 40, 0.7);
+            border-left: 3px solid #ffaa33;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            word-break: break-word;
+            animation: fadeSlide 0.2s ease;
+        }
+        .message b {
+            color: #ffbb55;
+        }
+        .system-msg {
+            border-left-color: #6a8cff;
+            color: #cbd5ff;
+        }
+        .error-msg {
+            border-left-color: #ff6a6a;
+            background: rgba(100, 20, 20, 0.5);
+            color: #ffb3b3;
+        }
+
+        /* Input area */
+        .input-area {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .input-area input {
+            flex: 1;
+            background: #0d0718;
+            border: 1px solid #ffb347;
+            border-radius: 60px;
+            padding: 14px 18px;
+            color: #ffe3b3;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .input-area button, .clear-chat {
+            background: linear-gradient(95deg, #b65300, #ff8c1a);
+            border: none;
+            border-radius: 60px;
+            padding: 12px 24px;
+            font-weight: bold;
+            color: #1f0a2b;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 0 6px #ff9f4a;
+        }
+        .input-area button:hover {
+            transform: scale(1.02);
+            background: #ff9f2e;
+            box-shadow: 0 0 12px #ffae42;
+        }
+        .clear-chat {
+            background: #2a1f3a;
+            color: #ffcf8a;
+            padding: 8px 16px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
+
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(6px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        /* Scroll personalizado */
+        .chat-window::-webkit-scrollbar {
+            width: 5px;
+        }
+        .chat-window::-webkit-scrollbar-track {
+            background: #2a1e3a;
+            border-radius: 10px;
+        }
+        .chat-window::-webkit-scrollbar-thumb {
+            background: #ffa559;
+            border-radius: 10px;
+        }
+
+        .loading-dots::after {
+            content: "⏤";
+            animation: dots 1.2s steps(3, end) infinite;
+            display: inline-block;
+            width: 24px;
+            text-align: left;
+        }
+        @keyframes dots {
+            0% { content: "⏤";}
+            33% { content: "⏤·";}
+            66% { content: "⏤··";}
+            100% { content: "⏤···";}
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 1rem;
+            opacity: 0.6;
+        }
+
+        @media (max-width: 560px) {
+            .container { padding: 1rem; }
+            .neon-title { font-size: 1.8rem; }
+            .input-group { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTR3cHFudnQ0cW9kZGsyZXIydzZ5bzM0aHI0eHBtbHdmb2hiMW00MiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/FJmg3QZrWaNAHvPqSK/giphy.gif" class="deco-gif gif-bg" alt="aura">
+<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdG8wNnZhaDBiNnVzZGo1YXNuczY3c2RwM2EyaXh1ZmVwaGkwaHpzZSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/1rdusuhN42ZDHCpj4L/giphy.gif" class="deco-gif gif-left" alt="mystic left">
+<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM2ltaXJtdG11bXphYzU3bnBmZ2gwbmRwY2VhY2FweGd1N2M5MGZvNiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/1rdusuhN42ZDHCpj4L/giphy.gif" class="deco-gif gif-right" alt="mystic right">
+
+<div class="container">
+    <h1 class="neon-title">✨ Sneha_310526 ✨</h1>
+
+    <div class="input-group">
+        <div class="api-field">
+            <input type="password" id="apiKeyInput" class="glass-input" placeholder="🔑 API Key de Groq" autocomplete="off">
+        </div>
+        <div class="model-field">
+            <select id="modelSelect" class="glass-input">
+                <option value="mixtral-8x7b-32768">🌙 Mixtral 8x7B (recomendado)</option>
+                <option value="llama3-70b-8192">🦙 Llama 3 70B</option>
+                <option value="llama3-8b-8192">📖 Llama 3 8B</option>
+                <option value="gemma2-9b-it">💎 Gemma 2 9B</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="upload-section" style="margin: 12px 0 0 0;">
+        <label for="fileInput" class="file-label">📜 Cargar Memoria (.txt / .pdf)</label>
+        <input type="file" id="fileInput" accept=".txt,.pdf">
+        <div id="docStatus" class="doc-status">⚡ Ningún documento cargado</div>
+    </div>
+
+    <div class="chat-window" id="chatWindow">
+        <div class="message"><b>🌙 Sneha:</b> Namaste, viajero. Soy tu guía analítica y mística. Sube un archivo (.txt o .pdf) o pregúntame desde tu intuición. El conocimiento aguarda.</div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Pregúntale a Sneha... (ej: ¿Cuál es la esencia del documento?)">
+        <button id="sendBtn">⟡ Enviar ⟡</button>
+        <button id="clearChatBtn" class="clear-chat" title="Limpiar conversación">🗑️ Limpiar</button>
+    </div>
+    <footer>𓋴 𓈖 𓅓 𓄿  ·  contexto dinámico  ·  sabiduría fragmentada</footer>
+</div>
+
+<script>
+    // ==================== CONFIGURACIÓN GLOBAL ====================
+    let documentoCompleto = "";          // texto completo del documento (limitado a 35k chars por performance)
+    let nombreDocumento = "";
+    let isProcessing = false;
+
+    // Elementos DOM
+    const chatWindow = document.getElementById('chatWindow');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendBtn');
+    const clearChatBtn = document.getElementById('clearChatBtn');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const modelSelect = document.getElementById('modelSelect');
+    const fileInput = document.getElementById('fileInput');
+    const docStatusDiv = document.getElementById('docStatus');
+
+    // Configuración API Groq (endpoint fijo oficial)
+    const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+    // Configurar worker de PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // ==================== FUNCIONES AUXILIARES ====================
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    function addMessage(sender, text, isError = false, isSystem = false) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message';
+        if (isError) msgDiv.classList.add('error-msg');
+        if (isSystem) msgDiv.classList.add('system-msg');
+        let displayName = sender === 'user' ? '✨ Tú' : (sender === 'sneha' ? '🌙 Sneha' : '⚙️ Sistema');
+        if (sender === 'system') displayName = '⚙️ Sistema';
+        msgDiv.innerHTML = `<b>${displayName}:</b> ${escapeHtml(text)}`;
+        chatWindow.appendChild(msgDiv);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+        return msgDiv;
+    }
+
+    function addLoadingMessage() {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'message';
+        loadingDiv.style.opacity = '0.9';
+        loadingDiv.style.background = '#1e132e';
+        loadingDiv.id = 'loadingMsg';
+        loadingDiv.innerHTML = `<b>🌙 Sneha:</b> <em class="loading-dots">Consultando los planos</em>`;
+        chatWindow.appendChild(loadingDiv);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+        return loadingDiv;
+    }
+
+    function removeLoadingMessage(loadingElem) {
+        if (loadingElem && loadingElem.remove) loadingElem.remove();
+    }
+
+    // Limpiar historial visual (solo mensajes, conserva el saludo base opcional)
+    function clearChatHistory() {
+        const preserveGreeting = chatWindow.children.length > 0 && chatWindow.children[0]?.innerText.includes('Namaste');
+        if (!preserveGreeting) {
+            chatWindow.innerHTML = '';
+            addMessage('sneha', 'Namaste, viajero. Soy tu guía analítica y mística. Sube un archivo (.txt o .pdf) o pregúntame desde tu intuición. El conocimiento aguarda.');
+        } else {
+            // remover todos excepto el primero
+            while (chatWindow.children.length > 1) {
+                chatWindow.removeChild(chatWindow.lastChild);
+            }
+        }
+    }
+
+    // ==================== MEJOR EXTRACCIÓN DE FRAGMENTO RELEVANTE ====================
+    function extraerFragmentoInteligente(query, textoCompleto, maxLength = 1500) {
+        if (!textoCompleto || textoCompleto.length === 0) return "";
+        
+        // Limpieza: normalizar query
+        const queryLower = query.toLowerCase();
+        const palabrasClave = queryLower.split(/\s+/).filter(p => p.length > 3);
+        if (palabrasClave.length === 0) {
+            // si query muy corta: devolver inicio del doc
+            return textoCompleto.substring(0, maxLength);
+        }
+
+        // Dividir en segmentos (párrafos por doble salto o puntos seguido de mayúscula)
+        let segments = textoCompleto.split(/\n\s*\n/);
+        if (segments.length < 2) {
+            segments = textoCompleto.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚ])/);
+        }
+        if (segments.length < 2) segments = [textoCompleto];
+        
+        // Calcular score para cada segmento
+        const scored = segments.map(seg => {
+            const segLower = seg.toLowerCase();
+            let score = 0;
+            for (let kw of palabrasClave) {
+                const ocurrencias = (segLower.match(new RegExp(kw, 'gi')) || []).length;
+                score += ocurrencias * (kw.length * 0.8);
+            }
+            // bonus si cerca del inicio del doc?
+            return { segment: seg.trim(), score };
+        });
+        
+        scored.sort((a, b) => b.score - a.score);
+        const bestSegments = scored.filter(s => s.score > 0).slice(0, 2);
+        let fragmento = "";
+        if (bestSegments.length > 0) {
+            fragmento = bestSegments.map(s => s.segment).join(".\n");
+        } else {
+            // sin match: primer párrafo no vacío
+            const nonEmpty = segments.find(s => s.trim().length > 50);
+            fragmento = nonEmpty ? nonEmpty : textoCompleto.substring(0, maxLength);
+        }
+        
+        // limpiar saltos excesivos y truncar
+        fragmento = fragmento.replace(/\s+/g, ' ').trim();
+        if (fragmento.length > maxLength) {
+            fragmento = fragmento.substring(0, maxLength);
+            const lastSpace = fragmento.lastIndexOf(' ');
+            if (lastSpace > maxLength * 0.8) fragmento = fragmento.substring(0, lastSpace) + '…';
+            else fragmento = fragmento + '…';
+        }
+        return fragmento;
+    }
+
+    // ==================== CARGAR PDF / TXT OPTIMIZADO ====================
+    async function cargarDocumento(file) {
+        if (!file) return;
+        const chatMsg = addMessage('system', `📂 Cargando "${file.name}"...`, false, true);
+        try {
+            let textoExtraido = "";
+            if (file.type === "application/pdf") {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = [];
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const content = await page.getTextContent();
+                    const pageText = content.items.map(item => item.str).join(' ');
+                    fullText.push(pageText);
+                    // actualizar estado cada varias páginas
+                    if (i % 5 === 0) {
+                        docStatusDiv.innerHTML = `📄 Procesando página ${i}/${pdf.numPages}...`;
+                    }
+                }
+                textoExtraido = fullText.join('\n');
+            } else {
+                textoExtraido = await file.text();
+            }
+            
+            if (!textoExtraido || textoExtraido.trim().length === 0) throw new Error("El documento no contiene texto legible.");
+            
+            // Limitar a 35000 caracteres para rendimiento y evitar costos excesivos
+            let textoLimitado = textoExtraido.length > 38000 ? textoExtraido.substring(0, 38000) + "\n[Contenido truncado para rendimiento]" : textoExtraido;
+            documentoCompleto = textoLimitado;
+            nombreDocumento = file.name;
+            const sizeMsg = `✅ Documento "${nombreDocumento}" cargado (${documentoCompleto.length} caracteres). Memoria disponible.`;
+            docStatusDiv.innerHTML = `📖 Activo: ${nombreDocumento} (${documentoCompleto.length} chars)`;
+            addMessage('system', sizeMsg, false, true);
+            // remover mensaje de carga inicial
+            if (chatMsg) chatMsg.remove();
+            addMessage('sneha', `He absorbido "${nombreDocumento}". Pregúntame sobre su esencia.`, false);
+        } catch (err) {
+            console.error(err);
+            docStatusDiv.innerHTML = `⚠️ Error al cargar: ${err.message}`;
+            addMessage('system', `Error al leer archivo: ${err.message}`, true, true);
+            if (chatMsg) chatMsg.remove();
+        }
+    }
+
+    // ==================== ENVÍO A GROQ (CONTEXTO FRAGMENTADO) ====================
+    async function sendToGroq(question, apiKey, modelName) {
+        if (!apiKey || apiKey.trim() === '') throw new Error("API Key de Groq no proporcionada");
+        
+        // Extraer fragmento relevante del documento si existe
+        let contextoFragmento = "";
+        if (documentoCompleto && documentoCompleto.length > 20) {
+            contextoFragmento = extraerFragmentoInteligente(question, documentoCompleto, 1400);
+            if (contextoFragmento) {
+                contextoFragmento = `\n\n🔮 Fragmento del documento (relevante):\n"""\n${contextoFragmento}\n"""\n`;
+            } else {
+                contextoFragmento = "\n\n(No se halló fragmento específico en el documento cargado)\n";
+            }
+        } else {
+            contextoFragmento = "\n(No hay documento cargado. Responde desde tu conocimiento místico-analítico.)\n";
+        }
+        
+        // Construcción con system + user para mejor adherencia
+        const systemPrompt = `Eres Sneha_310526, una guía mística, analítica y serena. Tu propósito es iluminar respuestas basadas en el conocimiento del documento proporcionado (si existe) y tu sabiduría intrínseca. NO copies textualmente largos fragmentos, sintetiza, sé profunda pero concisa. Si la pregunta no tiene relación con el documento, puedes responder con perspectiva espiritual, pero siempre aclara que viene de tu esencia. Idioma: español, tono cálido y enigmático.`;
+        
+        const userContent = `Pregunta del buscador: ${question}\n${contextoFragmento}\n\nPor favor, responde como Sneha_310526, usando el fragmento si es útil. Si no hay información suficiente, dímelo con honestidad mística.`;
+        
+        const payload = {
+            model: modelName,
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userContent }
+            ],
+            temperature: 0.68,
+            max_tokens: 1024,
+            top_p: 0.95
+        };
+        
+        const response = await fetch(GROQ_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+            let errorDetail = `HTTP ${response.status}`;
+            try {
+                const errBody = await response.json();
+                errorDetail = errBody.error?.message || errorDetail;
+            } catch(e) {}
+            throw new Error(`Error API Groq: ${errorDetail}`);
+        }
+        
+        const data = await response.json();
+        if (!data.choices || !data.choices[0]?.message?.content) throw new Error("Respuesta inválida de Groq");
+        return data.choices[0].message.content.trim();
+    }
+    
+    // ==================== ENVIAR MENSAJE PRINCIPAL ====================
+    async function sendMessage() {
+        if (isProcessing) {
+            addMessage('system', 'Un momento, ya estoy respondiendo...', false, true);
+            return;
+        }
+        
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) {
+            addMessage('system', '🔐 Necesitas ingresar tu API Key de Groq para conectarte.', true, true);
+            return;
+        }
+        
+        const question = userInput.value.trim();
+        if (!question) {
+            addMessage('system', 'Escribe una pregunta para Sneha.', true, true);
+            return;
+        }
+        
+        // Mostrar pregunta del usuario
+        addMessage('user', question);
+        userInput.value = '';
+        userInput.focus();
+        
+        isProcessing = true;
+        sendButton.disabled = true;
+        sendButton.style.opacity = '0.6';
+        
+        const loadingElem = addLoadingMessage();
+        
+        try {
+            const selectedModel = modelSelect.value;
+            const answer = await sendToGroq(question, apiKey, selectedModel);
+            removeLoadingMessage(loadingElem);
+            addMessage('sneha', answer);
+        } catch (err) {
+            removeLoadingMessage(loadingElem);
+            let mensajeError = err.message;
+            if (mensajeError.includes('API key')) mensajeError = '❌ API Key inválida o no autorizada. Verifica tu clave de Groq.';
+            else if (mensajeError.includes('model')) mensajeError = '⚠️ Modelo no soportado por Groq. Elige uno válido (Mixtral, Llama, Gemma).';
+            addMessage('system', `Error: ${mensajeError}`, true, true);
+            console.error(err);
+        } finally {
+            isProcessing = false;
+            sendButton.disabled = false;
+            sendButton.style.opacity = '1';
+        }
+    }
+    
+    // ==================== EVENT LISTENERS ====================
+    function initEventListeners() {
+        sendButton.addEventListener('click', sendMessage);
+        clearChatBtn.addEventListener('click', () => {
+            clearChatHistory();
+            addMessage('system', 'Historial limpiado. La esencia permanece.', false, true);
+        });
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !isProcessing) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            await cargarDocumento(file);
+            fileInput.value = ''; // permite recargar el mismo archivo después
+        });
+    }
+    
+    // Precarga de estado sugerido y ejemplo rápido
+    function showInitialGuidance() {
+        if (!documentoCompleto) {
+            docStatusDiv.innerHTML = `🌀 Sin memoria activa · sube .txt / .pdf`;
+        }
+    }
+    
+    // Bootstrap
+    (function bootstrap() {
+        initEventListeners();
+        showInitialGuidance();
+        // agregar tooltip para modelo
+        console.log("Sneha_310526 · Mística analítica lista");
+    })();
+</script>
+</body>
+</html>
